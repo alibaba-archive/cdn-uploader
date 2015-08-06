@@ -7,7 +7,6 @@
  * Licensed under the MIT license.
  */
 var ftp = require('vinyl-ftp')
-var merge2 = require('merge2')
 var through = require('through2')
 
 module.exports = function cdnUploader (remoteFolder, ftps) {
@@ -16,21 +15,29 @@ module.exports = function cdnUploader (remoteFolder, ftps) {
 
   var uploaderStreams = ftps.map(function (options) {
     if (!options || !options.host) throw new Error(String(options) + ' error!')
+    options.log = options.log || log(options.host)
     return ftp.create(options).dest(options.remoteFolder || remoteFolder)
   })
+  var pending = uploaderStreams.length
 
   return through.obj(function (file, encoding, next) {
-    if (!file.isNull()) {
-      uploaderStreams.forEach(function (stream) {
-        stream.push(file)
-      })
-      this.push(file)
-    }
+    uploaderStreams.forEach(function (stream) {
+      stream.write(file)
+    })
+    this.push(file)
     return next()
   }, function (callback) {
-    merge2(uploaderStreams).on('end', callback)
     uploaderStreams.forEach(function (stream) {
+      stream.once('finish', function () {
+        if (!--pending) setTimeout(callback, 500)
+      })
       stream.end()
     })
   })
+}
+
+function log (host) {
+  return function (action, message) {
+    if (/UP/.test(action)) console.log(host, action.trim(), message)
+  }
 }

@@ -4,7 +4,7 @@
   "authors": [
     "Yan Qing <admin@zensh.com>"
   ],
-  "version": "0.0.1",
+  "version": "0.1.0",
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -21,7 +21,6 @@
     "node": ">=0.10.36"
   },
   "dependencies": {
-    "merge2": "^0.3.6",
     "through2": "^2.0.0",
     "vinyl-ftp": "^0.4.4"
   },
