@@ -9,14 +9,15 @@
 var ftp = require('vinyl-ftp')
 var through = require('through2')
 
-module.exports = function cdnUploader (remoteFolder, ftps) {
+module.exports = function cdnUploader (remoteFolder, ftpList) {
   if (!remoteFolder || typeof remoteFolder !== 'string') throw new Error('remoteFolder required!')
-  if (!Array.isArray(ftps)) throw new Error('ftps required!')
+  if (!ftpList) throw new Error('ftps required!')
+  if (!Array.isArray(ftpList)) ftpList = [ftpList]
 
-  var uploaderStreams = ftps.map(function (options) {
-    if (!options || !options.host) throw new Error(String(options) + ' error!')
-    options.log = options.log || log(options.host)
-    return ftp.create(options).dest(options.remoteFolder || remoteFolder)
+  var uploaderStreams = ftpList.map(function (config) {
+    if (!config || !config.host) throw new Error(String(config) + ' error!')
+    config.log = config.log || log(config.host)
+    return ftp.create(config).dest(config.remoteFolder || remoteFolder)
   })
   var pending = uploaderStreams.length
 

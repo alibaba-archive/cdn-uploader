@@ -2,7 +2,6 @@ cdn-uploader
 ====
 Upload files to one or more CDN through FTP, it is also a gulp plugin.
 
-
 [![NPM version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]
 
