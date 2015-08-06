@@ -1,0 +1,42 @@
+{
+  "name": "cdn-uploader",
+  "description": "Upload files to one or more CDN through FTP, it is also a gulp plugin.",
+  "authors": [
+    "Yan Qing <admin@zensh.com>"
+  ],
+  "version": "0.0.1",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:teambition/cdn-uploader.git"
+  },
+  "homepage": "https://github.com/teambition/cdn-uploader",
+  "keywords": [
+    "gulpplugin",
+    "ftp",
+    "cdn",
+    "upload"
+  ],
+  "engines": {
+    "node": ">=0.10.36"
+  },
+  "dependencies": {
+    "merge2": "^0.3.6",
+    "through2": "^2.0.0",
+    "vinyl-ftp": "^0.4.4"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-sequence": "^0.3.2",
+    "standard": "^4.4.0"
+  },
+  "scripts": {
+    "test": "standard && gulp test"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "test",
+    "gulpfile.js"
+  ]
+}
