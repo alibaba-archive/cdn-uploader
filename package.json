@@ -6,6 +6,7 @@
   ],
   "version": "0.1.2",
   "main": "index.js",
+  "typings": "./typing.d.ts",
   "repository": {
     "type": "git",
     "url": "git@github.com:teambition/cdn-uploader.git"
