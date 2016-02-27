@@ -9,10 +9,17 @@
 
 var fs = require('fs')
 var ftp = require('vinyl-ftp')
+var crypto = require('crypto')
 var through = require('through2')
 
 var defaultOptions = {
   cache: '.cdnUploaderCache'
+}
+
+var md5 = function (data) {
+  var hash = crypto.createHash('md5')
+  hash.update(data)
+  return hash.digest('hex')
 }
 
 module.exports = function cdnUploader (remoteFolder, ftpList, options) {
@@ -23,12 +30,12 @@ module.exports = function cdnUploader (remoteFolder, ftpList, options) {
   var config = Object.assign({}, defaultOptions, options)
 
   if (config.cache) {   // Prepare cache
-    var cacheFd = fs.openSync(config.cache, 'a+')
-    var cachedConent = fs.readFileSync(cacheFd, { encoding: 'utf-8' })
+    fs.closeSync(fs.openSync(config.cache, 'a+'))
+    var cachedConent = fs.readFileSync(config.cache, { encoding: 'utf-8' })
     try {
       var cachedObject = JSON.parse(cachedConent)
     } catch (e) {
-      var cachedObject = {}
+      cachedObject = {}
     }
   }
 
@@ -36,27 +43,31 @@ module.exports = function cdnUploader (remoteFolder, ftpList, options) {
     if (!ftpConfig || !ftpConfig.host) throw new Error(String(ftpConfig) + ' error!')
     ftpConfig.log = ftpConfig.log || log(ftpConfig.host)
 
+    if (!(id in cachedObject)) { cachedObject[id] = {} }
+    var ftpFolder = ftpConfig.remoteFolder || remoteFolder
+    var id = ftpConfig.host + '>' + ftpConfig.user + '<' + ftpFolder
+
     var integrityChecker = function (file, remote, cb) {
       if (!remote ||
           file.stat.mtime > remote.ftp.date ||
           file.stat.size !== remote.ftp.size) {
-        checker.failed = true
-        console.log('File', file.path, 'was corrupted')
+        ++stream.failed
+        console.log(ftpConfig.host + ':', 'File', remote.path, 'was corrupted')
       } else if (config.cache) {
-        cachedObject[file.path] = { mtime: file.stat.mtime, size: file.stat.size }
+        cachedObject[id][file.path] = { md5: md5(file.contents) }
       }
       cb(null, false)
     }
 
     var conn = ftp.create(ftpConfig)
-    var ftpFolder = ftpConfig.remoteFolder || remoteFolder
-    var checker = conn.filter(ftpFolder, integrityChecker)
     var uploader = conn.dest(ftpFolder)
+    var checker = conn.filter(ftpFolder, integrityChecker)
+    var stream = { uploader: uploader, checker: checker, buffer: [], id: id,
+                   failed: 0, uploaded: 0, hit: 0, host: ftpConfig.host }
 
-    uploader.on('data', function (chunk) { checker.write(chunk) })
-    uploader.once('finish', function () { checker.end() })
+    uploader.on('data', function (chunk) { stream.buffer.push(chunk) })
 
-    return { uploader: uploader, checker: checker, uploaded: 0 }
+    return stream
   })
 
   var pending = uploaderStreams.length
@@ -64,11 +75,10 @@ module.exports = function cdnUploader (remoteFolder, ftpList, options) {
   return through.obj(function (file, encoding, cb) {
     uploaderStreams.forEach(function (stream) {
       if (config.cache &&
-          file.path in cachedObject &&
-          file.stat.size === cachedObject[file.path].size &&
-          new Date(file.stat.mtime).valueOf() ===
-          new Date(cachedObject[file.path].mtime).valueOf()) {
-        console.log('Cache hit: ' + file.path)
+          file.path in cachedObject[stream.id] &&
+          md5(file.contents) === cachedObject[stream.id][file.path].md5) {
+        // console.log('Cache hit: ' + file.path)
+        ++stream.hit
         return
       }
       ++stream.uploaded
@@ -76,23 +86,31 @@ module.exports = function cdnUploader (remoteFolder, ftpList, options) {
     })
     cb(null, file)
   }, function (cb) {
-    var failed = false
     uploaderStreams.forEach(function (stream) {
-      stream.checker.once('finish', function () {
-        if (stream.checker.failed) { failed = true }
-        if (!--pending) {
-          if (config.cache) {
-            fs.writeFileSync(cacheFd, JSON.stringify(cachedObject, null, '  '))
-            fs.closeSync(cacheFd)
+      stream.uploader.once('finish', function () {
+        setTimeout(function () {
+          while (stream.buffer.length) {
+            stream.checker.write(stream.buffer.shift())
           }
-          setTimeout(function () {
+          stream.checker.end()
+        }, 2000)
+      })
+
+      var failed = false
+      stream.checker.once('finish', function () {
+        setTimeout(function () {
+          console.log('Host:', stream.host, 'Uploaded:', stream.uploaded,
+                      'Cache Hit:', stream.hit, 'Failed:', stream.failed)
+          if (stream.failed) { failed = true }
+          if (!--pending) {
+            if (config.cache) {
+              fs.writeFileSync(config.cache, JSON.stringify(cachedObject, null, '  '))
+            }
             cb(failed ? new Error('File corrupted during upload, please try again') : null)
-          }, 500)
-        }
+          }
+        }, 1000)
       })
-      stream.uploader.on('data', function () {
-        if(!--stream.uploaded) { stream.uploader.end() }
-      })
+      stream.uploader.end()
     })
   })
 }
