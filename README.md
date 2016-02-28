@@ -36,9 +36,11 @@ export CDN_PWD='ftppassword'
 var cdnUploader = require('cdn-uploader')
 ```
 
-### cdnUploader(remoteFolder, ftpList)
+### cdnUploader(remoteFolder, ftpList, options)
 - `remoteFolder`: {String}, FTP folder
 - `ftpList`: {Array}, one or more FTP options, detail [vinyl-ftp](https://github.com/morris/vinyl-ftp#ftpcreate-config-)
+- `options`: {Object}, options of cdn-uploader, keys include:
+  - `cache`: Cached file list path, set `false` to disable cache mechanism, default to `.cdnUploaderCache`
 
 Return a through stream.
 

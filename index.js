@@ -43,16 +43,16 @@ module.exports = function cdnUploader (remoteFolder, ftpList, options) {
     if (!ftpConfig || !ftpConfig.host) throw new Error(String(ftpConfig) + ' error!')
     ftpConfig.log = ftpConfig.log || log(ftpConfig.host)
 
-    if (!(id in cachedObject)) { cachedObject[id] = {} }
     var ftpFolder = ftpConfig.remoteFolder || remoteFolder
     var id = ftpConfig.host + '>' + ftpConfig.user + '<' + ftpFolder
+    if (!(id in cachedObject)) { cachedObject[id] = {} }
 
     var integrityChecker = function (file, remote, cb) {
       if (!remote ||
           file.stat.mtime > remote.ftp.date ||
           file.stat.size !== remote.ftp.size) {
         ++stream.failed
-        console.log(ftpConfig.host + ':', 'File', remote.path, 'was corrupted')
+        console.log(ftpConfig.host + ':', 'File', (remote || file).path, 'was corrupted')
       } else if (config.cache) {
         cachedObject[id][file.path] = { md5: md5(file.contents) }
       }
@@ -87,28 +87,27 @@ module.exports = function cdnUploader (remoteFolder, ftpList, options) {
     cb(null, file)
   }, function (cb) {
     uploaderStreams.forEach(function (stream) {
-      stream.uploader.once('finish', function () {
+      stream.uploader.once('end', function () {
         setTimeout(function () {
           while (stream.buffer.length) {
             stream.checker.write(stream.buffer.shift())
           }
+          stream.checker.resume()
           stream.checker.end()
         }, 2000)
       })
 
       var failed = false
-      stream.checker.once('finish', function () {
-        setTimeout(function () {
-          console.log('Host:', stream.host, 'Uploaded:', stream.uploaded,
-                      'Cache Hit:', stream.hit, 'Failed:', stream.failed)
-          if (stream.failed) { failed = true }
-          if (!--pending) {
-            if (config.cache) {
-              fs.writeFileSync(config.cache, JSON.stringify(cachedObject, null, '  '))
-            }
-            cb(failed ? new Error('File corrupted during upload, please try again') : null)
+      stream.checker.once('end', function () {
+        console.log('Host:', stream.host, 'Uploaded:', stream.uploaded,
+                    'Cache Hit:', stream.hit, 'Failed:', stream.failed)
+        if (stream.failed) { failed = true }
+        if (!--pending) {
+          if (config.cache) {
+            fs.writeFileSync(config.cache, JSON.stringify(cachedObject, null, '  '))
           }
-        }, 1000)
+          cb(failed ? new Error('File corrupted during upload, please try again') : null)
+        }
       })
       stream.uploader.end()
     })
