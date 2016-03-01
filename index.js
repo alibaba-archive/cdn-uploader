@@ -27,13 +27,16 @@ module.exports = function cdnUploader (remoteFolder, ftpList, options) {
   if (!ftpList) throw new Error('ftps required!')
   if (!Array.isArray(ftpList)) ftpList = [ftpList]
 
-  var config = Object.assign({}, defaultOptions, options)
+  var config = {}
+  for (var attrd in defaultOptions) { config[attrd] = defaultOptions[attrd] }
+  for (var attr in options) { config[attr] = options[attr] }
 
+  var cachedObject = null
   if (config.cache) {   // Prepare cache
     fs.closeSync(fs.openSync(config.cache, 'a+'))
     var cachedConent = fs.readFileSync(config.cache, { encoding: 'utf-8' })
     try {
-      var cachedObject = JSON.parse(cachedConent)
+      cachedObject = JSON.parse(cachedConent)
     } catch (e) {
       cachedObject = {}
     }
@@ -106,7 +109,7 @@ module.exports = function cdnUploader (remoteFolder, ftpList, options) {
           if (config.cache) {
             fs.writeFileSync(config.cache, JSON.stringify(cachedObject, null, '  '))
           }
-          cb(failed ? new Error('File corrupted during upload, please try again') : null)
+          cb(failed ? new Error('Some file corrupted during upload') : null)
         }
       })
       stream.uploader.end()
