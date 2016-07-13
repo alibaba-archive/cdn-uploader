@@ -51,9 +51,7 @@ module.exports = function cdnUploader (remoteFolder, ftpList, options) {
     if (!(id in cachedObject)) { cachedObject[id] = {} }
 
     var integrityChecker = function (file, remote, cb) {
-      if (!remote ||
-          file.stat.mtime > remote.ftp.date ||
-          file.stat.size !== remote.ftp.size) {
+      if (!remote || file.stat.size !== remote.ftp.size) {
         ++stream.failed
         console.log(ftpConfig.host + ':', 'File', (remote || file).path, 'was corrupted')
       } else if (config.cache) {
