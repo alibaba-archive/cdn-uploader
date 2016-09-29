@@ -1,10 +1,11 @@
 {
   "name": "cdn-uploader",
-  "description": "Upload files to one or more CDN through FTP, it is also a gulp plugin.",
+  "description": "Upload files to one or more CDN through FTP or specific plugin, it is also a gulp plugin.",
   "authors": [
-    "Yan Qing <admin@zensh.com>"
+    "Yan Qing <admin@zensh.com>",
+    "Sunny <ratsunny@gmail.com>"
   ],
-  "version": "0.2.3",
+  "version": "0.3.0",
   "main": "index.js",
   "typings": "./typing.d.ts",
   "repository": {
