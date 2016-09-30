@@ -9,6 +9,7 @@
 
 var ftp = require('vinyl-ftp')
 var crypto = require('crypto')
+var gutil = require('gulp-util')
 
 var md5sum = function (data) {
   var hash = crypto.createHash('md5')
@@ -18,7 +19,7 @@ var md5sum = function (data) {
 
 var log = function (host) {
   return function (action, message) {
-    if (/UP/.test(action)) console.log(host, action.trim(), message)
+    if (/UP/.test(action)) gutil.log(host, action.trim(), message)
   }
 }
 
@@ -45,7 +46,7 @@ var FTPStream = function (ftp_config, config) {
   var integrityChecker = function (file, remote, cb) {
     if (!remote || file.stat.size !== remote.ftp.size) {
       ++this.statistics.failed
-      console.log(ftp_config.host + ':', 'File', (remote || file).path, 'was corrupted')
+      gutil.log(gutil.colors.red(ftp_config.host, ': File', (remote || file).path, 'was corrupted'))
     } else if (config.cache) {
       config.cache_object[this.id][file.path] = { md5: md5sum(file.contents) }
     }
@@ -68,7 +69,7 @@ FTPStream.prototype.write = function (file, callback) {
   if (this.config.cache &&
       file.path in this.config.cache_object[this.id] &&
       md5sum(file.contents) === this.config.cache_object[this.id][file.path].md5) {
-    // console.log('Cache hit: ' + file.relative)
+    // gutil.log('Cache hit: ' + file.relative)
     ++this.statistics.cache_hit
     return callback()
   }
@@ -79,7 +80,7 @@ FTPStream.prototype.write = function (file, callback) {
 FTPStream.prototype.flush = function (callback) {
   // After uploader upload all files, use checker check all files in internal_pipe
   this.ftp.uploader.once('end', function () {
-    console.log(this.ftp_config.host, 'upload end, start integrity check...')
+    gutil.log(this.ftp_config.host, 'upload done, starting integrity check...')
     while (this.internal_pipe.length) {
       this.ftp.checker.write(this.internal_pipe.shift())
     }

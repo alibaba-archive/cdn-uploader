@@ -8,6 +8,7 @@
  */
 
 var fs = require('fs')
+var gutil = require('gulp-util')
 var through = require('through2')
 
 var slots = {
@@ -64,10 +65,10 @@ function cdnUploader (remote_folder, cdn_list, options) {
     var pending = upload_streams.length
     upload_streams.forEach(function (stream) {
       stream.flush(function () {
-        console.log('Host:', stream.host,
-                    'Uploaded:', stream.statistics.uploaded,
-                    'Cache Hit:', stream.statistics.cache_hit,
-                    'Failed:', stream.statistics.failed)
+        gutil.log(gutil.colors.bold('Host:', stream.host),
+                  gutil.colors.green('Uploaded:', stream.statistics.uploaded),
+                  gutil.colors.blue('Cache Hit:', stream.statistics.cache_hit),
+                  gutil.colors.red('Failed:', stream.statistics.failed))
         failed_flag = failed_flag || stream.statistics.failed
         if (!--pending) {   // True when all CDN done uploading...
           if (config.cache) {

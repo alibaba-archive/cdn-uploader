@@ -10,6 +10,7 @@
 var http = require('http')
 var path = require('path')
 var crypto = require('crypto')
+var gutil = require('gulp-util')
 
 var md5sum = function (data) {
   var hash = crypto.createHash('md5')
@@ -52,7 +53,7 @@ UPYunStream.prototype.write = function (file, callback) {
   if (this.config.cache &&
       file.path in this.config.cache_object[this.id] &&
       md5sum(file.contents) === this.config.cache_object[this.id][file.path].md5) {
-    // console.log('Cache hit: ' + file.relative)
+    // gutil.log('Cache hit: ' + file.relative)
     ++this.statistics.cache_hit
     return callback()
   }
@@ -77,7 +78,7 @@ UPYunStream.prototype.write = function (file, callback) {
       this.config.cache_object[this.id][file.path] = { md5: md5sum(file.contents) }
     } else {
       ++this.statistics.failed
-      console.error('%s %s upload failed, http error: %s', this.host, file.relative, res.statusCode)
+      gutil.log(gutil.colors.red(this.host, file.relative, 'upload failed, http error:', res.statusCode))
     }
     res.on('end', callback)
     res.resume()
@@ -88,7 +89,7 @@ UPYunStream.prototype.write = function (file, callback) {
     callback()
   })
 
-  console.log('%s Uploading %s...', this.host, file.relative)
+  gutil.log(this.host, 'Uploading', gutil.colors.bold(file.relative))
   req.write(file.contents)
   req.end()
 }

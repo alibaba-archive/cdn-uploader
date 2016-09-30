@@ -23,6 +23,7 @@
     "node": ">=0.10.36"
   },
   "dependencies": {
+    "gulp-util": "^3.0.7",
     "through2": "^2.0.0",
     "vinyl-ftp": "^0.4.5"
   },
