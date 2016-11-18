@@ -26,3 +26,10 @@ node_modules
 
 # Users Environment Variables
 .lock-wscript
+
+# Test temporary files
+test/.cdnUploaderCache
+test/upload
+
+# DS_Store, desktop.ini, etc.
+.DS_Store
