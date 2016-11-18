@@ -87,7 +87,7 @@ UPYunStream.prototype.write = function (file, callback) {
   req.on('error', function () {
     ++this.statistics.failed
     callback()
-  })
+  }.bind(this))
 
   gutil.log(this.host, 'Uploading', gutil.colors.bold(file.relative))
   req.write(file.contents)
