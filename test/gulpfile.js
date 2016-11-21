@@ -12,7 +12,7 @@ var CDNs = [{
 
 var errorExit = function (e) {
   console.log(e)
-  exit(1)
+  process.exit(1)
 }
 
 gulp.task('ftp-upload', function () {

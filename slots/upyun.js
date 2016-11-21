@@ -7,8 +7,8 @@
  * Licensed under the MIT license.
  */
 
-var http = require('http')
 var path = require('path')
+var https = require('https')
 var crypto = require('crypto')
 var gutil = require('gulp-util')
 
@@ -46,7 +46,7 @@ var UPYunStream = function (cdn_config, config) {
 }
 
 UPYunStream.prototype.write = function (file, callback) {
-  // Ignore directory for http upload
+  // Ignore directory for https upload
   if (file.isDirectory()) { return callback() }
 
   // Skip upload when hit cache
@@ -58,7 +58,7 @@ UPYunStream.prototype.write = function (file, callback) {
     return callback()
   }
 
-  // HTTP request options
+  // HTTPs request options
   var options = {
     hostname: this.cdn_config.api_host,
     method: 'PUT',
@@ -71,8 +71,8 @@ UPYunStream.prototype.write = function (file, callback) {
   }
   options.headers.Authorization = signature(options, this.cdn_config)
 
-  // Start http request
-  var req = http.request(options, function (res) {
+  // Start https request
+  var req = https.request(options, function (res) {
     if (res.statusCode === 200) {
       ++this.statistics.uploaded
       this.config.cache_object[this.id][file.path] = { md5: md5sum(file.contents) }

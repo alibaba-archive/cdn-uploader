@@ -33,7 +33,7 @@
     "standard": "^5.4.1"
   },
   "scripts": {
-    "test": "standard && gulp test"
+    "test": "standard && ./test/test.sh all"
   },
   "ignore": [
     "**/.*",

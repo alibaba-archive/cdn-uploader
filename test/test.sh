@@ -10,6 +10,8 @@ HUGE_FILE_COUNT=2
 
 TEST_FILE_TYPE=( 'small' 'medium' 'huge' )
 
+cd "${0%/*}"
+
 mkdir -p upload
 
 function GenFiles() {
@@ -48,6 +50,7 @@ function ValidateFiles() {
     netmd5=$(curl --silent $url | md5sum | awk '{print $1}')
     if [ $filemd5 != $netmd5 ]; then
       echo -e '\033[31mFailed\033[39m'
+      echo "URL: "$url
       echo "Local file md5: "$filemd5
       echo "CDN file md5: "$netmd5
       exit 1
