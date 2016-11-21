@@ -23,30 +23,30 @@ var log = function (host) {
   }
 }
 
-var FTPStream = function (ftp_config, config) {
-  // Check and configure ftp_config used in ftp.create()
-  if (!ftp_config || !ftp_config.host || !ftp_config.password) {
-    throw new Error(String(ftp_config) + ' error!')
+var FTPStream = function (ftpConfig, config) {
+  // Check and configure ftpConfig used in ftp.create()
+  if (!ftpConfig || !ftpConfig.host || !ftpConfig.password) {
+    throw new Error(String(ftpConfig) + ' error!')
   }
-  ftp_config.log = ftp_config.log || log(ftp_config.host)
+  ftpConfig.log = ftpConfig.log || log(ftpConfig.host)
 
   // Prepare global cache
-  var ftp_folder = ftp_config.remote_folder
-  this.id = ftp_config.host + ':' + ftp_config.user + ':' + ftp_folder
+  var ftpFolder = ftpConfig.remote_folder
+  this.id = ftpConfig.host + ':' + ftpConfig.user + ':' + ftpFolder
   if (!(this.id in config.cache_object)) { config.cache_object[this.id] = {} }
 
   // Define properties
-  this.host = ftp_config.host
+  this.host = ftpConfig.host
   this.config = config
-  this.ftp_config = ftp_config
+  this.ftpConfig = ftpConfig
   this.statistics = { uploaded: 0, cache_hit: 0, failed: 0 }
-  var internal_pipe = this.internal_pipe = []
+  var internalPipe = this.internalPipe = []
 
   // Integrity checker for ftp->conn.filter()
   var integrityChecker = function (file, remote, cb) {
     if (!remote || file.stat.size !== remote.ftp.size) {
       ++this.statistics.failed
-      gutil.log(gutil.colors.red(ftp_config.host, ': File', (remote || file).path, 'was corrupted'))
+      gutil.log(gutil.colors.red(ftpConfig.host, ': File', (remote || file).path, 'was corrupted'))
     } else if (config.cache) {
       config.cache_object[this.id][file.path] = { md5: md5sum(file.contents) }
     }
@@ -54,15 +54,15 @@ var FTPStream = function (ftp_config, config) {
   }.bind(this)
 
   // Core FTP streams
-  var conn = ftp.create(ftp_config)
+  var conn = ftp.create(ftpConfig)
   this.ftp = {
     conn: conn,
-    uploader: conn.dest(ftp_folder),
-    checker: conn.filter(ftp_folder, integrityChecker)
+    uploader: conn.dest(ftpFolder),
+    checker: conn.filter(ftpFolder, integrityChecker)
   }
 
-  // All data received from uploader will be stored in internal_pipe for checker use
-  this.ftp.uploader.on('data', function (chunk) { internal_pipe.push(chunk) })
+  // All data received from uploader will be stored in internalPipe for checker use
+  this.ftp.uploader.on('data', function (chunk) { internalPipe.push(chunk) })
 }
 
 FTPStream.prototype.write = function (file, callback) {
@@ -78,11 +78,11 @@ FTPStream.prototype.write = function (file, callback) {
 }
 
 FTPStream.prototype.flush = function (callback) {
-  // After uploader upload all files, use checker check all files in internal_pipe
+  // After uploader upload all files, use checker check all files in internalPipe
   this.ftp.uploader.once('end', function () {
-    gutil.log(this.ftp_config.host, 'upload done, starting integrity check...')
-    while (this.internal_pipe.length) {
-      this.ftp.checker.write(this.internal_pipe.shift())
+    gutil.log(this.ftpConfig.host, 'upload done, starting integrity check...')
+    while (this.internalPipe.length) {
+      this.ftp.checker.write(this.internalPipe.shift())
     }
     this.ftp.checker.resume()
     this.ftp.checker.end()
@@ -93,6 +93,6 @@ FTPStream.prototype.flush = function (callback) {
   this.ftp.uploader.end()
 }
 
-module.exports = function (cdn_config, config) {
-  return new FTPStream(cdn_config, config)
+module.exports = function (cdnConfig, config) {
+  return new FTPStream(cdnConfig, config)
 }

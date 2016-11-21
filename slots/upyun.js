@@ -18,28 +18,28 @@ var md5sum = function (data) {
   return hash.digest('hex')
 }
 
-var signature = function (options, cdn_config) {
-  var md5_password = md5sum(cdn_config.password)
+var signature = function (options, cdnConfig) {
+  var md5Password = md5sum(cdnConfig.password)
   var payload = [ options.method, encodeURI(options.path), options.headers.Date,
-                  options.headers['Content-Length'], md5_password ].join('&')
-  return 'UpYun ' + cdn_config.operator + ':' + md5sum(payload)
+                  options.headers['Content-Length'], md5Password ].join('&')
+  return 'UpYun ' + cdnConfig.operator + ':' + md5sum(payload)
 }
 
-var UPYunStream = function (cdn_config, config) {
-  // Check and reconfigure cdn_config
-  if (!cdn_config || !(cdn_config.host || cdn_config.api_host) ||
-      !cdn_config.operator || !cdn_config.password || !cdn_config.bucket) {
-    throw new Error(String(cdn_config) + ' error!')
+var UPYunStream = function (cdnConfig, config) {
+  // Check and reconfigure cdnConfig
+  if (!cdnConfig || !(cdnConfig.host || cdnConfig.api_host) ||
+      !cdnConfig.operator || !cdnConfig.password || !cdnConfig.bucket) {
+    throw new Error(String(cdnConfig) + ' error!')
   }
-  cdn_config.api_host = cdn_config.api_host || cdn_config.host
+  cdnConfig.api_host = cdnConfig.api_host || cdnConfig.host
 
   // Define properties
-  this.host = cdn_config.api_host
+  this.host = cdnConfig.api_host
   this.config = config
-  this.cdn_config = cdn_config
+  this.cdnConfig = cdnConfig
   this.statistics = { uploaded: 0, cache_hit: 0, failed: 0 }
-  this.id = cdn_config.api_host + ':' + cdn_config.operator + ':' +
-            cdn_config.bucket + ':' + cdn_config.remote_folder
+  this.id = cdnConfig.api_host + ':' + cdnConfig.operator + ':' +
+            cdnConfig.bucket + ':' + cdnConfig.remote_folder
 
   // Prepare cache
   if (!(this.id in config.cache_object)) { config.cache_object[this.id] = {} }
@@ -60,16 +60,16 @@ UPYunStream.prototype.write = function (file, callback) {
 
   // HTTPs request options
   var options = {
-    hostname: this.cdn_config.api_host,
+    hostname: this.cdnConfig.api_host,
     method: 'PUT',
-    path: path.normalize('/' + this.cdn_config.bucket + '/' + this.cdn_config.remote_folder + '/' + file.relative),
+    path: path.normalize('/' + this.cdnConfig.bucket + '/' + this.cdnConfig.remote_folder + '/' + file.relative),
     headers: {
       'Date': new Date().toUTCString(),
       'Content-MD5': md5sum(file.contents),
       'Content-Length': Buffer.byteLength(file.contents).toString()
     }
   }
-  options.headers.Authorization = signature(options, this.cdn_config)
+  options.headers.Authorization = signature(options, this.cdnConfig)
 
   // Start https request
   var req = https.request(options, function (res) {
@@ -98,6 +98,6 @@ UPYunStream.prototype.flush = function (callback) {
   callback()
 }
 
-module.exports = function (cdn_config, config) {
-  return new UPYunStream(cdn_config, config)
+module.exports = function (cdnConfig, config) {
+  return new UPYunStream(cdnConfig, config)
 }
