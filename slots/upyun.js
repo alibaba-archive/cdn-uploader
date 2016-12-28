@@ -21,8 +21,9 @@ var md5sum = function (data) {
 var signature = function (options, cdnConfig) {
   var md5Password = md5sum(cdnConfig.password)
   var payload = [ options.method, encodeURI(options.path), options.headers.Date,
-                  options.headers['Content-Length'], md5Password ].join('&')
-  return 'UpYun ' + cdnConfig.operator + ':' + md5sum(payload)
+                  options.headers['Content-MD5'] ].join('&')
+  return 'UPYUN ' + cdnConfig.operator + ':' +
+         crypto.createHmac('sha1', md5Password).update(payload).digest('base64')
 }
 
 var UPYunStream = function (cdnConfig, config) {
