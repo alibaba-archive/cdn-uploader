@@ -20,7 +20,7 @@ var md5sum = function (data) {
 
 var signature = function (options, cdnConfig) {
   var md5Password = md5sum(cdnConfig.password)
-  var payload = [ options.method, encodeURI(options.path), options.headers.Date,
+  var payload = [ options.method, options.path, options.headers.Date,
                   options.headers['Content-MD5'] ].join('&')
   return 'UPYUN ' + cdnConfig.operator + ':' +
          crypto.createHmac('sha1', md5Password).update(payload).digest('base64')
@@ -63,7 +63,7 @@ UPYunStream.prototype.write = function (file, callback) {
   var options = {
     hostname: this.cdnConfig.api_host,
     method: 'PUT',
-    path: path.normalize('/' + this.cdnConfig.bucket + '/' + this.cdnConfig.remote_folder + '/' + file.relative),
+    path: encodeURI(path.normalize('/' + this.cdnConfig.bucket + '/' + this.cdnConfig.remote_folder + '/' + file.relative)),
     headers: {
       'Date': new Date().toUTCString(),
       'Content-MD5': md5sum(file.contents),
