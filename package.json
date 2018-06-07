@@ -5,7 +5,7 @@
     "Yan Qing <admin@zensh.com>",
     "Sunny <ratsunny@gmail.com>"
   ],
-  "version": "0.3.3",
+  "version": "0.3.4",
   "main": "index.js",
   "typings": "./typing.d.ts",
   "repository": {
